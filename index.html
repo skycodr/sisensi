@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+
+<body>
+  <div id="sisenseApp">
+    <div class="Tab1" id="widget1" style="height: 400px; width: 35%; float: left; display: inline; margin-top:30px;"></div>
+    <div class="Tab1" id="widget2" style="height: 400px; width: 40%; float: left; display: inline; margin-top:30px;"></div>
+  </div>
+
+
+  <script type="text/javascript">
+  var url = 'https://sisense.rippe.com:8443';
+  checkAuth(true);
+
+  function getToken() {
+    /**
+     * We will make a call out to the API gateway, if you can't create your own token; it is in jwt.js for doing this:  node jwt.js
+     * @type {String}
+     */
+    var jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzU0ODE0NTAsInN1YiI6ImFsYW5AbWFjbGF1cmluLWdyb3VwLmNvbSIsImp0aSI6Ijk2MWFjMmM4LTUyMzYtNDI1Ni1hNTJlLWRkOTBjYTliZGZkYSJ9.AJJEU3A5Z0OksK4piGDRTRegnH0ZUXKD54qwH8Qij3M';
+    return jwt;
+  }
+
+  function checkAuth(firstRequest) {
+    var isAuth = new XMLHttpRequest();
+    isAuth.open('GET', url + '/api/auth/isauth');
+    isAuth.withCredentials = true
+    isAuth.onreadystatechange = function() {
+      if (isAuth.readyState === 4 && isAuth.status === 200 && isAuth.responseText) {
+        var response = JSON.parse(isAuth.responseText)
+        if (response.isAuthenticated) {
+          loadSisenseJS();
+        } else if (firstRequest) {
+          authenticateUser();
+        } else {
+          console.warn('Cannot authenticate a user. Further execution is terminated')
+        }
+      } else if (isAuth.readyState === 4 && isAuth.status === 403 && firstRequest) { //Workaround for Linux
+        authenticateUser()
+      }
+    }
+    isAuth.send()
+  }
+
+  function loadSisenseJS() {
+    var script = document.createElement('script');
+    script.onload = function() {
+      loadSiSenseWidgets();
+    };
+    script.src = url + '/js/sisense.js';
+    document.head.appendChild(script);
+  }
+
+  function authenticateUser() {
+    var jwt = getToken();
+    var script = document.createElement('script');
+    script.onload = function() {
+      script.remove();
+      checkAuth(false);
+    };
+    script.src = url + '/jwt?jwt=' + jwt + '&return_to=' + url + '/resources/rippe-embed.js'; // you need to put this file inside resource folder; "some static file that sits on the system"
+    document.head.appendChild(script);
+  }
+
+  function loadSiSenseWidgets() {
+    Sisense.connect(url).then(function(app) {
+      app.dashboards.load('5db9d80485114041dc0ec732').then(function(dash) {
+        dash.widgets.get('5db9d80485114041dc0ec737').container = document.getElementById("widget1");
+        dash.renderFilters(document.getElementById("filters"));
+        dash.refresh();
+      });
+    })
+  }
+
+  (function done() {
+    console.log('User was authenticated')
+  })()
+  </script>
+</body>
