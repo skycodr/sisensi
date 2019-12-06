@@ -38,6 +38,7 @@
     status("Open: " + url + '/api/auth/isauth');
     isAuth.onreadystatechange = function() {
       if (isAuth.readyState === 4 && isAuth.status === 200 && isAuth.responseText) {
+        status('IsAuth Response: ' + isAuth.responseText);
         var response = JSON.parse(isAuth.responseText)
         status('Response: ' + JSON.stringify(isAuth));
         if (response.isAuthenticated) {
