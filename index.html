@@ -8,21 +8,26 @@
 
 <body>
   <div id="sisenseApp">
+    <div id="status"></div>
     <div class="Tab1" id="widget1" style="height: 400px; width: 35%; float: left; display: inline; margin-top:30px;"></div>
     <div class="Tab1" id="widget2" style="height: 400px; width: 40%; float: left; display: inline; margin-top:30px;"></div>
   </div>
 
 
   <script type="text/javascript">
+  var _status = document.getElmentById("status");
+  function status(message) { _status.innerHTML += message + "<br>"; }
   var url = 'https://sisense.rippe.com:8443';
   checkAuth(true);
 
+    status("Init");
   function getToken() {
     /**
      * We will make a call out to the API gateway, if you can't create your own token; it is in jwt.js for doing this:  node jwt.js
      * @type {String}
      */
     var jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1NzU0ODYwMzgsInN1YiI6ImFsYW5AbWFjbGF1cmluLWdyb3VwLmNvbSIsImp0aSI6ImIyNzg1OTBmLTJmODUtNDY1Zi1iNjljLTI5Mjk2MzgzZjU4YyJ9.pxfjfDjxMP4EUNF_eznnQgReLkrG1Ol6IkkDr6vTEw4';
+    status("Token: " + jwt);
     return jwt;
   }
 
@@ -30,18 +35,26 @@
     var isAuth = new XMLHttpRequest();
     isAuth.open('GET', url + '/api/auth/isauth');
     isAuth.withCredentials = true
+    status("Open: " + url + '/api/auth/isauth');
     isAuth.onreadystatechange = function() {
       if (isAuth.readyState === 4 && isAuth.status === 200 && isAuth.responseText) {
         var response = JSON.parse(isAuth.responseText)
+        status('Response: ' + JSON.stringify(isAuth));
         if (response.isAuthenticated) {
+          status('Loading Sisense');
           loadSisenseJS();
         } else if (firstRequest) {
+          status('First Request: authenticating...');
           authenticateUser();
         } else {
-          console.warn('Cannot authenticate a user. Further execution is terminated')
+          status('Error: Cannot authenticate a user. Further execution is terminated');
+          console.warn('Cannot authenticate a user. Further execution is terminated');
         }
       } else if (isAuth.readyState === 4 && isAuth.status === 403 && firstRequest) { //Workaround for Linux
+        status('Linux workaround');
         authenticateUser()
+      }else {
+        status('Something is not right');
       }
     }
     isAuth.send()
